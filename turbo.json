@@ -18,7 +18,9 @@
             "dependsOn": [
                 "^build"
             ],
-            "outputs": []
+            "outputs": [
+                "apps/mobile/.expo/web-build/**"
+            ]
         }
     }
 }

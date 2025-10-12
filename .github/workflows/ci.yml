@@ -11,38 +11,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Clonar el repositorio
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Instalar PNPM
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.0
+          run_install: false
+
+      # 3️⃣ Configurar Node.js y cache para pnpm
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: true
+      # 4️⃣ Instalar dependencias del monorepo
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
+      # 5️⃣ Verificar versiones
       - name: Verify environment
         run: |
           node -v
           pnpm -v
           pnpm turbo --version
+          npx expo --version
 
+      # 6️⃣ Construir paquetes compartidos
       - name: Build shared types
         run: pnpm turbo run build --filter=@myrepo/types
 
+      # 7️⃣ Construir el backend (NestJS)
       - name: Build backend
         run: pnpm turbo run build --filter=backend
+
+      # 8️⃣ Lint y build de Expo
+      - name: Lint Expo project
+        run: pnpm --filter=mobile run lint
 
       - name: Build Expo Web
         run: pnpm --filter=mobile run expo-build
 
+      # 9️⃣ Subir artefactos del build web
       - name: Upload Expo Web build
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: expo-web
-          path: apps/mobile/dist
+          path: apps/mobile/.expo/web-build

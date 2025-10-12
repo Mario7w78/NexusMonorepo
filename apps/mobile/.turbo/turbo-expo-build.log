@@ -1,0 +1,20 @@
+
+> mobile@1.0.0 expo-build C:\Users\Mario\Documents\CODE\arquisoft6\NexusMonorepo\apps\mobile
+> expo export -p web
+
+Starting Metro Bundler
+Web apps\mobile\index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web apps\mobile\index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.0% (51/88)
+Web apps\mobile\index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.8% (136/164)
+Web apps\mobile\index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 98.9% (175/176)
+Web Bundled 13549ms apps\mobile\index.ts (180 modules)
+
+› web bundles (1):
+_expo/static/js/web/index-b567332d29291c94e4f80e7083ddd4aa.js (330 kB)
+
+› Files (3):
+favicon.ico (14.5 kB)
+index.html (1.21 kB)
+metadata.json (49 B)
+
+Exported: dist
