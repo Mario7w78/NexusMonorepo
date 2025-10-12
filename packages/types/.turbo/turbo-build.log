@@ -1,0 +1,4 @@
+
+> @myrepo/types@0.0.1 build C:\Users\Mario\Documents\CODE\arquisoft6\NexusMonorepo\packages\types
+> tsc -p tsconfig.build.json
+

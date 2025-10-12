@@ -10,6 +10,15 @@
             ]
         },
         "lint": {},
-        "test": {}
+        "dev": {
+            "cache": false
+        },
+        "test": {},
+        "expo-build": {
+            "dependsOn": [
+                "^build"
+            ],
+            "outputs": []
+        }
     }
 }

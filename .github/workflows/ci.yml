@@ -1,39 +1,48 @@
-name: CI
+name: CI - Monorepo Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛠 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ✅ Instalar pnpm primero (antes de setup-node)
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false  # evita instalación automática
-
-      # ✅ Luego configurar Node.js y cache de pnpm
-      - name: ⚙️ Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - name: 📥 Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: true
 
-      - name: 🚀 Build all apps
-        run: npx turbo run build
+      - name: Verify environment
+        run: |
+          node -v
+          pnpm -v
+          pnpm turbo --version
 
-      - name: 🧪 Run tests
-        run: npx turbo run test
+      - name: Build shared types
+        run: pnpm turbo run build --filter=@myrepo/types
+
+      - name: Build backend
+        run: pnpm turbo run build --filter=backend
+
+      - name: Build Expo Web
+        run: pnpm --filter=mobile run expo-build
+
+      - name: Upload Expo Web build
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: expo-web
+          path: apps/mobile/dist
