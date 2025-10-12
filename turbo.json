@@ -19,7 +19,7 @@
                 "^build"
             ],
             "outputs": [
-                "apps/mobile/.expo/web-build/**"
+                "apps/mobile/.expo/web/**"
             ]
         }
     }
