@@ -2,52 +2,34 @@ name: CI
 
 on:
   push:
-    branches: ['main']
-    paths:
-      - 'apps/**'
-      - 'packages/**'
-      - '.github/**'
+    branches:
+      - main
   pull_request:
-    branches: ['main']
-    paths:
-      - 'apps/**'
-      - 'packages/**'
-      - '.github/**'
 
 jobs:
-  ci:
+  build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x]
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+    steps:
+      - name: 🛠 Checkout repo
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
           cache: 'pnpm'
 
-      - name: Install pnpm
-        run: npm i -g pnpm
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          version: 9
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: 📥 Install dependencies
+        run: pnpm install
 
-      - name: Run lint
-        run: pnpm -w run lint
+      - name: 🚀 Build all apps
+        run: npx turbo run build --filter=...
 
-      - name: Run tests
-        run: pnpm -w run test
-
-      - name: Build
-        run: pnpm -w run build
+      - name: 🧪 Run tests
+        run: npx turbo run test --filter=...
