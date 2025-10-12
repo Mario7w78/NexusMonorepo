@@ -20,7 +20,6 @@ jobs:
       - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
           run_install: false  # evita instalación automática
 
       # ✅ Luego configurar Node.js y cache de pnpm
