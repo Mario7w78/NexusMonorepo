@@ -5,31 +5,36 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: 🛠 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      # ✅ Instalar pnpm primero (antes de setup-node)
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false  # evita instalación automática
+
+      # ✅ Luego configurar Node.js y cache de pnpm
+      - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: 📥 Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Install dependencies
-        run: pnpm install
+      - name: 🚀 Build all apps
+        run: npx turbo run build
 
-      - name: Build all apps
-        run: npx turbo run build --filter=...
-
-      - name: Run tests
-        run: npx turbo run test --filter=...
+      - name: 🧪 Run tests
+        run: npx turbo run test
