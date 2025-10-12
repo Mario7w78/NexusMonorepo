@@ -11,25 +11,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🛠 Checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - name: 📦 Setup pnpm
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - name: 📥 Install dependencies
+      - name: Install dependencies
         run: pnpm install
 
-      - name: 🚀 Build all apps
+      - name: Build all apps
         run: npx turbo run build --filter=...
 
-      - name: 🧪 Run tests
+      - name: Run tests
         run: npx turbo run test --filter=...
