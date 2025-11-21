@@ -10,13 +10,15 @@
     "expo-build": "expo export -p web"
   },
   "dependencies": {
-    "expo": "~54.0.13",
+    "@nestjs/microservices": "^11.1.9",
+    "expo": "~54.0.25",
     "expo-status-bar": "~3.0.8",
     "glob": "^11.0.3",
     "inflight": "^1.0.6",
+    "lucide-react-native": "^0.554.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-native": "0.81.4",
+    "react-native": "0.81.5",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {
