@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { Card, Avatar, Input, Button, COLORS } from '../../components/NativeComponents';
-import { useNexusController } from '../../hooks/useNexusController';
 import { ArrowLeft, Send } from 'lucide-react-native';
 
-export const MessagesModule = () => {
-  const { data, state } = useNexusController(); 
+interface MessagesModuleProps {
+  chats: any[];
+  user: any;
+}
+
+export const MessagesModule = ({ chats, user }: MessagesModuleProps) => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
   // --- ESTADO DE CARGA ---
-  if (state.loading) {
+  if (!user) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -20,7 +23,7 @@ export const MessagesModule = () => {
   // VISTA CHAT INDIVIDUAL
   if (activeChatId) {
     // Buscamos por _id (Mongo) o id (Mock)
-    const chat = data.chats.find(c => (c._id || c.id) === activeChatId);
+    const chat = chats.find(c => (c._id || c.id) === activeChatId);
     
     if (!chat) return <Text style={{ padding: 20 }}>Chat no encontrado</Text>;
 
@@ -46,7 +49,7 @@ export const MessagesModule = () => {
         <ScrollView style={{ flex: 1, padding: 16 }}>
            {/* Renderizado de mensajes: Priorizamos el array 'messages' del backend */}
            {chat.messages && chat.messages.length > 0 ? (
-             chat.messages.map((msg, index) => (
+             chat.messages.map((msg: any, index: number) => (
                <View key={index} style={[styles.bubble, msg.sender === 'Me' ? styles.bubbleRight : styles.bubbleLeft]}>
                  <Text style={msg.sender === 'Me' ? { color: 'white' } : { color: COLORS.text }}>
                    {msg.content}
@@ -74,12 +77,12 @@ export const MessagesModule = () => {
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <Text style={styles.headerTitle}>Mensajes</Text>
       
-      {data.chats.length === 0 ? (
+      {chats.length === 0 ? (
         <Text style={{ textAlign: 'center', color: COLORS.textMuted, marginTop: 20 }}>
           No tienes mensajes aún.
         </Text>
       ) : (
-        data.chats.map((chat) => {
+        chats.map((chat) => {
           // Normalización de datos para la tarjeta
           const uniqueId = chat._id || chat.id || 'temp-id';
           const displayName = chat.participantName || chat.name || 'Usuario';

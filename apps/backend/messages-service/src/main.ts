@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
@@ -8,7 +9,7 @@ async function bootstrap() {
     AppModule,
     {
       transport: Transport.TCP,
-      options: { port: 3003 }, // <--- AQUÍ ESTABA EL ERROR (debe ser 3003)
+      options: { port: 3003 },
     },
   );
   await app.listen();

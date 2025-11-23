@@ -8,7 +8,7 @@ export class AppController {
     @Inject('USERS_SERVICE') private usersClient: ClientProxy,
     @Inject('IDEAS_SERVICE') private ideasClient: ClientProxy,
     @Inject('MESSAGES_SERVICE') private messagesClient: ClientProxy,
-  ) {}
+  ) { }
 
   // --- USUARIOS ---
   @Post('users')
@@ -21,6 +21,17 @@ export class AppController {
     return this.usersClient.send({ cmd: 'find_user' }, id);
   }
 
+  // --- AUTH ---
+  @Post('auth/register')
+  async register(@Body() data: any) {
+    return this.usersClient.send({ cmd: 'register_user' }, data);
+  }
+
+  @Post('auth/login')
+  async login(@Body() data: any) {
+    return this.usersClient.send({ cmd: 'login_user' }, data);
+  }
+
   // --- IDEAS ---
   @Get('ideas')
   getIdeas() {
@@ -29,10 +40,19 @@ export class AppController {
 
   @Post('ideas')
   createIdea(@Body() data: any) {
-    console.log('¡Llegó una nueva idea!', data); // <--- Agrega esto
-    return this.ideasClient.send({ cmd: 'create_idea' }, data);
-
+    console.log('Nueva idea recibida:', data);
+    // Agregar campos requeridos por defecto si no vienen del frontend
+    const ideaData = {
+      ...data,
+      author: data.author || 'Usuario Demo',
+      authorId: data.authorId || 'user-demo-123',
+      avatar: data.avatar || 'UD',
+      status: data.status || 'Nueva',
+      collaborators: data.collaborators || 0,
+    };
+    return this.ideasClient.send({ cmd: 'create_idea' }, ideaData);
   }
+
   // --- MENSAJES ---
   @Get('messages/:userId')
   getChats(@Param('userId') userId: string) {

@@ -1,24 +1,24 @@
 import { useState, useEffect } from 'react';
-// Asegúrate de que la ruta a tus tipos sea correcta
-import { ModuleId, Idea, Chat, Transaction } from '../types/nexus';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ModuleId, Idea, Chat, Transaction, User } from '../types/nexus';
 
-// CONFIGURACIÓN DE API
-// Android Emulator: 'http://10.0.2.2:3000'
-// iOS Simulator / Web: 'http://localhost:3000'
-// Dispositivo Físico: Tu IP local (ej: 'http://192.168.1.15:3000')
-const API_URL = 'http://10.0.2.2:3000'; 
+// Detecta automáticamente la plataforma
+const API_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+const USER_STORAGE_KEY = '@nexus_user';
 
 export const useNexusController = () => {
   // --- 1. ESTADOS DE UI (Navegación y Modales) ---
   const [activeModule, setActiveModule] = useState<ModuleId>('dashboard');
-  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   // ID Híbrido: Acepta number (mock) o string (Mongo)
   const [selectedIdeaId, setSelectedIdeaId] = useState<string | number | null>(null);
-  
+
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPublishForm, setShowPublishForm] = useState(false);
   const [activeChatIndex, setActiveChatIndex] = useState(0);
-  
+
   // --- 2. ESTADOS DE DATOS (Desde Backend) ---
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [chats, setChats] = useState<Chat[]>([]);
@@ -38,9 +38,10 @@ export const useNexusController = () => {
   };
 
   const fetchChats = async () => {
+    if (!currentUser) return; // No fetch if not logged in
+
     try {
-      // 'user123' es un ID temporal hasta que tengamos login real
-      const response = await fetch(`${API_URL}/messages/user123`);
+      const response = await fetch(`${API_URL}/messages/${currentUser.id}`);
       if (!response.ok) throw new Error('Error en red al obtener chats');
       const data = await response.json();
       setChats(data);
@@ -49,15 +50,33 @@ export const useNexusController = () => {
     }
   };
 
+  // Cargar sesión guardada al iniciar
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const savedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
+        if (savedUser) {
+          setCurrentUser(JSON.parse(savedUser));
+        }
+      } catch (error) {
+        console.error("Error loading session:", error);
+      }
+    };
+    loadSession();
+  }, []);
+
   // Cargar datos al iniciar el hook (cuando abre la app)
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchIdeas(), fetchChats()])
+    const promises = [fetchIdeas()];
+    if (currentUser) promises.push(fetchChats());
+
+    Promise.all(promises)
       .finally(() => setLoading(false));
-  }, []);
+  }, [currentUser]); // Re-fetch when user changes
 
   // --- 4. ACCIONES (Lógica de Negocio) ---
-  
+
   const navigateToModule = (module: ModuleId) => {
     setActiveModule(module);
     // Limpiamos estados al cambiar de módulo para evitar errores visuales
@@ -90,18 +109,18 @@ export const useNexusController = () => {
   const publishIdea = async (formData: any) => {
     try {
       setLoading(true); // Mostramos carga
-      
+
       const response = await fetch(`${API_URL}/ideas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           // Datos por defecto para el MVP
-          author: 'Juan Dev', 
-          authorId: 'user123', 
+          author: currentUser?.fullName || 'Juan Dev',
+          authorId: currentUser?.id || 'user123',
           status: 'Nueva',
           collaborators: 0,
-          avatar: 'JD'
+          avatar: currentUser?.avatar || 'JD'
         }),
       });
 
@@ -121,30 +140,98 @@ export const useNexusController = () => {
     }
   };
 
+  // --- 6. AUTENTICACIÓN ---
+  const login = async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) throw new Error('Credenciales inválidas');
+
+      const data = await response.json();
+      if (data.success) {
+        setCurrentUser(data.user);
+        await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
+        return { success: true };
+      } else {
+        return { success: false, error: data.message || 'Error de login' };
+      }
+    } catch (error) {
+      console.error("Login Error:", error);
+      return { success: false, error: 'Email o contraseña incorrectos' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (fullName: string, email: string, password: string, specialty: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, email, password, specialty }),
+      });
+
+      if (!response.ok) throw new Error('Error al registrar');
+
+      const data = await response.json();
+      if (data.success) {
+        setCurrentUser(data.user);
+        await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
+        return { success: true };
+      } else {
+        return { success: false, error: data.message || 'Error al registrar' };
+      }
+    } catch (error) {
+      console.error("Register Error:", error);
+      return { success: false, error: 'No se pudo crear la cuenta' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      setCurrentUser(null);
+      setActiveModule('dashboard');
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   // --- 5. RETORNO DEL HOOK ---
   return {
     state: {
       activeModule,
       selectedIdeaId,
       selectedIdea: getSelectedIdea(),
-      showCheckout,      
-      showPublishForm,   
+      showCheckout,
+      showPublishForm,
       activeChatIndex,
-      loading
-    },
-    data: {
+      loading,
+      currentUser,
+      // Data moved to state for easier access in UI
       ideas,
       chats,
       transactions
     },
     actions: {
-      navigateToModule,  
+      navigateToModule,
       setActiveModule,
       selectIdea,
-      toggleCheckout,    
-      togglePublishForm, 
-      publishIdea, // <--- Función crítica para el botón "Publicar Proyecto"
-      setActiveChatIndex
+      toggleCheckout,
+      togglePublishForm,
+      publishIdea,
+      setActiveChatIndex,
+      login,
+      register,
+      logout
     }
   };
 };

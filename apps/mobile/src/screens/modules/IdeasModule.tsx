@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { Card, Badge, Button, Input, Separator, Avatar, COLORS } from '../../components/NativeComponents';
-import { useNexusController } from '../../hooks/useNexusController';
 import { ArrowLeft, Clock, Users, DollarSign } from 'lucide-react-native';
 
-export const IdeasModule = () => {
-  const { state, data, actions } = useNexusController();
+interface IdeasModuleProps {
+  ideas: any[];
+  actions: any;
+  state: any;
+}
 
+export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
   // --- ESTADOS LOCALES PARA EL FORMULARIO ---
   const [form, setForm] = useState({
     title: '',
@@ -160,7 +163,7 @@ export const IdeasModule = () => {
           <Text style={styles.bodyText}>{idea.fullDescription || idea.description}</Text>
           
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
-             {idea.skills?.map((s, index) => <Badge key={index} text={s} variant="secondary" />)}
+             {idea.skills?.map((s: string, index: number) => <Badge key={index} text={s} variant="secondary" />)}
           </View>
         </Card>
 
@@ -199,12 +202,12 @@ export const IdeasModule = () => {
 
       <Input placeholder="Buscar por tecnología, categoría..." />
 
-      {data.ideas.length === 0 ? (
+      {ideas.length === 0 ? (
         <Text style={{ textAlign: 'center', marginTop: 40, color: COLORS.textMuted }}>
           No hay ideas disponibles. ¡Sé el primero en publicar!
         </Text>
       ) : (
-        data.ideas.map((idea) => {
+        ideas.map((idea) => {
           // Compatibilidad: Usamos _id (Mongo) o id (Mock)
           const uniqueId = idea._id || idea.id;
           

@@ -1,11 +1,13 @@
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { Card, Button, COLORS, Separator } from '../../components/NativeComponents';
-import { useNexusController } from '../../hooks/useNexusController';
 import { DollarSign, ArrowUpRight, ArrowDownLeft } from 'lucide-react-native';
 
-export const PaymentsModule = () => {
-  const { data } = useNexusController();
+interface PaymentsModuleProps {
+  transactions: any[];
+}
+
+export const PaymentsModule = ({ transactions }: PaymentsModuleProps) => {
   
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -18,23 +20,27 @@ export const PaymentsModule = () => {
       </Card>
 
       <Text style={{ fontSize: 18, fontWeight: '600', marginVertical: 12 }}>Historial</Text>
-      {data.transactions.map((tx, index) => (
-        <Card key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ backgroundColor: tx.amount.includes('+') ? '#dcfce7' : '#fee2e2', padding: 8, borderRadius: 8 }}>
-                 {tx.amount.includes('+') ? <ArrowDownLeft size={20} color={COLORS.success} /> : <ArrowUpRight size={20} color={COLORS.danger} />}
-              </View>
-              <View>
-                 <Text style={{ fontWeight: '600' }}>{tx.type}</Text>
-                 <Text style={{ fontSize: 12, color: COLORS.textMuted }}>{tx.project}</Text>
-              </View>
-           </View>
-           <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontWeight: 'bold', color: tx.amount.includes('+') ? COLORS.success : COLORS.danger }}>{tx.amount}</Text>
-              <Text style={{ fontSize: 10, color: COLORS.textMuted }}>{tx.date}</Text>
-           </View>
-        </Card>
-      ))}
+      {transactions && transactions.length > 0 ? (
+        transactions.map((tx, index) => (
+          <Card key={index} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ backgroundColor: tx.amount.includes('+') ? '#dcfce7' : '#fee2e2', padding: 8, borderRadius: 8 }}>
+                   {tx.amount.includes('+') ? <ArrowDownLeft size={20} color={COLORS.success} /> : <ArrowUpRight size={20} color={COLORS.danger} />}
+                </View>
+                <View>
+                   <Text style={{ fontWeight: '600' }}>{tx.type}</Text>
+                   <Text style={{ fontSize: 12, color: COLORS.textMuted }}>{tx.project}</Text>
+                </View>
+             </View>
+             <View style={{ alignItems: 'flex-end' }}>
+                <Text style={{ fontWeight: 'bold', color: tx.amount.includes('+') ? COLORS.success : COLORS.danger }}>{tx.amount}</Text>
+                <Text style={{ fontSize: 10, color: COLORS.textMuted }}>{tx.date}</Text>
+             </View>
+          </Card>
+        ))
+      ) : (
+        <Text style={{ color: COLORS.textMuted, textAlign: 'center', marginTop: 20 }}>No hay transacciones recientes.</Text>
+      )}
     </ScrollView>
   );
 };

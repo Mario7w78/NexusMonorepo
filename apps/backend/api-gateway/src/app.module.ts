@@ -22,9 +22,14 @@ import { AppService } from './app.service';
         transport: Transport.TCP,
         options: { host: 'localhost', port: 3003 }, // Mensajes -> Puerto 3003
       },
+      {
+        name: 'PAYMENTS_SERVICE',
+        transport: Transport.TCP,
+        options: { host: 'localhost', port: 3004 }, // Pagos -> Puerto 3004
+      },
     ]),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

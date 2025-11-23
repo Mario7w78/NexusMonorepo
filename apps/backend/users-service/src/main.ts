@@ -1,4 +1,5 @@
 // apps/backend/users-service/src/main.ts
+import 'dotenv/config'; // Cargar variables de entorno
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
@@ -13,5 +14,6 @@ async function bootstrap() {
   );
   await app.listen();
   console.log('Users Service is running on port 3001');
+  console.log(`Connected to database: ${process.env.DB_HOST || 'localhost'}`);
 }
 bootstrap();
