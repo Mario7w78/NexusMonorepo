@@ -205,6 +205,78 @@ export const useNexusController = () => {
     }
   };
 
+  // --- 7. CHAT FUNCTIONS ---
+  const fetchAllUsers = async () => {
+    try {
+      const response = await fetch(`${API_URL}/users`);
+      if (!response.ok) throw new Error('Error fetching users');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Fetch Users Error:", error);
+      return [];
+    }
+  };
+
+  const createChat = async (participantId: string, participantName: string, avatar: string, project?: string) => {
+    if (!currentUser) return { success: false, error: 'No user logged in' };
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/messages/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participants: [currentUser.id, participantId],
+          participantName,
+          avatar,
+          project: project || 'Chat directo',
+          chatType: 'direct'
+        }),
+      });
+      if (!response.ok) throw new Error('Error creating chat');
+      const data = await response.json();
+      await fetchChats();
+      return { success: true, chat: data };
+    } catch (error) {
+      console.error("Create Chat Error:", error);
+      return { success: false, error: 'No se pudo crear el chat' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendMessage = async (chatId: string, content: string) => {
+    if (!currentUser) return { success: false, error: 'No user logged in' };
+    try {
+      const response = await fetch(`${API_URL}/messages/${chatId}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: currentUser.id,
+          content
+        }),
+      });
+      if (!response.ok) throw new Error('Error sending message');
+      const data = await response.json();
+      await fetchChats();
+      return { success: true, data };
+    } catch (error) {
+      console.error("Send Message Error:", error);
+      return { success: false, error: 'No se pudo enviar el mensaje' };
+    }
+  };
+
+  const markChatAsRead = async (chatId: string) => {
+    try {
+      await fetch(`${API_URL}/messages/${chatId}/read`, {
+        method: 'POST',
+      });
+      await fetchChats();
+    } catch (error) {
+      console.error("Mark as Read Error:", error);
+    }
+  };
+
   // --- 5. RETORNO DEL HOOK ---
   return {
     state: {
@@ -231,7 +303,11 @@ export const useNexusController = () => {
       setActiveChatIndex,
       login,
       register,
-      logout
+      logout,
+      createChat,
+      sendMessage,
+      markChatAsRead,
+      fetchAllUsers
     }
   };
 };

@@ -101,8 +101,22 @@ export const Button = ({
 };
 
 // --- Input ---
-export const Input = ({ label, placeholder, multiline, value, onChangeText }: { label?: string; placeholder?: string; multiline?: boolean; value?: string; onChangeText?: (t: string) => void }) => (
-  <View style={{ marginBottom: 16 }}>
+export const Input = ({ 
+  label, 
+  placeholder, 
+  multiline, 
+  value, 
+  onChangeText,
+  style 
+}: { 
+  label?: string; 
+  placeholder?: string; 
+  multiline?: boolean; 
+  value?: string; 
+  onChangeText?: (t: string) => void;
+  style?: ViewStyle;
+}) => (
+  <View style={[{ marginBottom: 16 }, style]}>
     {label && <Text style={styles.label}>{label}</Text>}
     <TextInput
       style={[styles.input, multiline && { height: 100, textAlignVertical: 'top' }]}

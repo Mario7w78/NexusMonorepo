@@ -11,6 +11,11 @@ export class AppController {
   ) { }
 
   // --- USUARIOS ---
+  @Get('users')
+  getAllUsers() {
+    return this.usersClient.send({ cmd: 'find_all_users' }, {});
+  }
+
   @Post('users')
   createUser(@Body() data: any) {
     return this.usersClient.send({ cmd: 'create_user' }, data);
@@ -57,5 +62,28 @@ export class AppController {
   @Get('messages/:userId')
   getChats(@Param('userId') userId: string) {
     return this.messagesClient.send({ cmd: 'get_chats' }, userId);
+  }
+
+  @Post('messages/chat')
+  createChat(@Body() data: {
+    participants: string[];
+    participantName: string;
+    project?: string;
+    avatar: string;
+    chatType?: string;
+  }) {
+    console.log('📨 Creating new chat:', data);
+    return this.messagesClient.send({ cmd: 'create_chat' }, data);
+  }
+
+  @Post('messages/:chatId/send')
+  sendMessage(@Param('chatId') chatId: string, @Body() data: { sender: string; content: string }) {
+    console.log('💬 Sending message to chat:', chatId);
+    return this.messagesClient.send({ cmd: 'send_message' }, { chatId, ...data });
+  }
+
+  @Post('messages/:chatId/read')
+  markAsRead(@Param('chatId') chatId: string) {
+    return this.messagesClient.send({ cmd: 'mark_as_read' }, chatId);
   }
 }

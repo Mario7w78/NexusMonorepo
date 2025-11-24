@@ -6,7 +6,8 @@
   "scripts": {
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "dev:backend": "turbo run start:dev --filter=\"./apps/backend/*\""
   },
   "keywords": [],
   "author": "",

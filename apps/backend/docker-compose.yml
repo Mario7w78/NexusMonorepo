@@ -18,6 +18,17 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+  
+  # Message Broker (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: nexus_rabbitmq
+    ports:
+      - "5672:5672"   # Puerto AMQP
+      - "15672:15672" # Puerto UI Management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
 
 volumes:
   postgres_data:

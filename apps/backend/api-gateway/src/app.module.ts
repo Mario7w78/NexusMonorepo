@@ -9,23 +9,39 @@ import { AppService } from './app.service';
     ClientsModule.register([
       {
         name: 'USERS_SERVICE',
-        transport: Transport.TCP,
-        options: { host: 'localhost', port: 3001 }, // Usuario -> Puerto 3001
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://guest:guest@localhost:5672'],
+          queue: 'users_queue',
+          queueOptions: { durable: false },
+        },
       },
       {
         name: 'IDEAS_SERVICE',
-        transport: Transport.TCP,
-        options: { host: 'localhost', port: 3002 }, // Ideas -> Puerto 3002
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://guest:guest@localhost:5672'],
+          queue: 'ideas_queue',
+          queueOptions: { durable: false },
+        },
       },
       {
         name: 'MESSAGES_SERVICE',
-        transport: Transport.TCP,
-        options: { host: 'localhost', port: 3003 }, // Mensajes -> Puerto 3003
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://guest:guest@localhost:5672'],
+          queue: 'messages_queue',
+          queueOptions: { durable: false },
+        },
       },
       {
         name: 'PAYMENTS_SERVICE',
-        transport: Transport.TCP,
-        options: { host: 'localhost', port: 3004 }, // Pagos -> Puerto 3004
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://guest:guest@localhost:5672'],
+          queue: 'payments_queue',
+          queueOptions: { durable: false },
+        },
       },
     ]),
   ],
