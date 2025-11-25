@@ -4,8 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModuleId, Idea, Chat, Transaction, User } from '../types/nexus';
 import { supabase } from '../config/supabase';
 
-// Detecta automáticamente la plataforma
-const API_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+// URL del API Gateway desplegado en Railway
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api-gateway-production-7a43.up.railway.app';
 const USER_STORAGE_KEY = '@nexus_user';
 
 export const useNexusController = () => {

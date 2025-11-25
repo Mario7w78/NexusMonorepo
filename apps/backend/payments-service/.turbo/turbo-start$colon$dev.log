@@ -22,3 +22,11 @@ Payments Service is listening on port 3004
 [32m[Nest] 17388  - [39m25/11/2025, 12:18:40 a. m. [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMongooseCoreModule dependencies initialized[39m[38;5;3m +1938ms[39m
 [32m[Nest] 17388  - [39m25/11/2025, 12:18:40 a. m. [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mMongooseModule dependencies initialized[39m[38;5;3m +1ms[39m
 [32m[Nest] 17388  - [39m25/11/2025, 12:18:40 a. m. [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 17388  - [39m25/11/2025, 12:18:40 a. m. [32m    LOG[39m [38;5;3m[NestMicroservice] [39m[32mNest microservice successfully started[39m[38;5;3m +139ms[39m
+Payments Service is listening on port 3004
+[2J[3J[H[[90m1:38:56 a. m.[0m] File change detected. Starting incremental compilation...
+
+ERROR: el proceso con PID 15864 (proceso secundario de PID 20684)
+no se pudo terminar.
+Motivo: No hay ninguna instancia activa de la tarea.
+ERROR: no se encontr� el proceso "15864".
