@@ -17,7 +17,11 @@ export class AppController {
   async create(@Payload() data: any) {
     const createdIdea = new this.ideaModel(data);
     const savedIdea = await createdIdea.save();
-    await this.searchService.indexIdea(savedIdea);
+    try {
+      await this.searchService.indexIdea(savedIdea);
+    } catch (error) {
+      console.warn('⚠️ Elasticsearch indexing failed (non-critical):', error.message);
+    }
     return savedIdea;
   }
 
