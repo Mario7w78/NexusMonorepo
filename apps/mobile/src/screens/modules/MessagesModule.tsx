@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Modal, FlatList } from 'react-native';
 import { Card, Avatar, Input, Button, COLORS } from '../../components/NativeComponents';
 import { ArrowLeft, Send, Plus, Search, X } from 'lucide-react-native';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 interface MessagesModuleProps {
   chats: any[];
@@ -17,6 +18,8 @@ interface MessagesModuleProps {
 export const MessagesModule = ({ chats, user, actions }: MessagesModuleProps) => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
+  const [localMessages, setLocalMessages] = useState<any[]>([]);
+  const { connected, joinChat, leaveChat, onNewMessage, offNewMessage } = useWebSocket(user?.id);
   
   // Estados para nuevo chat
   const [showNewChatModal, setShowNewChatModal] = useState(false);
@@ -24,6 +27,32 @@ export const MessagesModule = ({ chats, user, actions }: MessagesModuleProps) =>
   const [searchQuery, setSearchQuery] = useState('');
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // WebSocket: Join/leave chat room
+  useEffect(() => {
+    if (activeChatId) {
+      joinChat(activeChatId);
+      setLocalMessages([]);
+      
+      return () => {
+        leaveChat(activeChatId);
+      };
+    }
+  }, [activeChatId]);
+
+  // WebSocket: Listen for new messages
+  useEffect(() => {
+    onNewMessage((data: any) => {
+      console.log('📨 New message received:', data);
+      if (data.chatId === activeChatId) {
+        setLocalMessages(prev => [...prev, data.message]);
+      }
+    });
+    
+    return () => {
+      offNewMessage();
+    };
+  }, [activeChatId]);
 
   // Cargar usuarios al abrir el modal
   useEffect(() => {
@@ -120,21 +149,24 @@ export const MessagesModule = ({ chats, user, actions }: MessagesModuleProps) =>
           ref={ref => ref?.scrollToEnd({ animated: true })}
           onContentSizeChange={(w, h) => {}}
         >
-           {/* Renderizado de mensajes: Priorizamos el array 'messages' del backend */}
-           {chat.messages && chat.messages.length > 0 ? (
-             chat.messages.map((msg: any, index: number) => (
-               <View key={index} style={[styles.bubble, msg.sender === user.id || msg.sender === 'Me' ? styles.bubbleRight : styles.bubbleLeft]}>
-                 <Text style={msg.sender === user.id || msg.sender === 'Me' ? { color: 'white' } : { color: COLORS.text }}>
-                   {msg.content}
-                 </Text>
+           {/* Renderizado de mensajes: Combinamos mensajes del backend con mensajes en tiempo real */}
+           {(() => {
+             const allMessages = [...(chat.messages || []), ...localMessages];
+             return allMessages.length > 0 ? (
+               allMessages.map((msg: any, index: number) => (
+                 <View key={index} style={[styles.bubble, msg.sender === user.id || msg.sender === 'Me' ? styles.bubbleRight : styles.bubbleLeft]}>
+                   <Text style={msg.sender === user.id || msg.sender === 'Me' ? { color: 'white' } : { color: COLORS.text }}>
+                     {msg.content}
+                   </Text>
+                 </View>
+               ))
+             ) : (
+               /* Fallback para datos mock antiguos */
+               <View style={[styles.bubble, styles.bubbleLeft]}>
+                 <Text>{chat.lastMessage || 'Inicio de la conversación'}</Text>
                </View>
-             ))
-           ) : (
-             /* Fallback para datos mock antiguos */
-             <View style={[styles.bubble, styles.bubbleLeft]}>
-               <Text>{chat.lastMessage || 'Inicio de la conversación'}</Text>
-             </View>
-           )}
+             );
+           })()}
            <View style={{ height: 20 }} />
         </ScrollView>
 

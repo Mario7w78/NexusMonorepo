@@ -3,10 +3,14 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Chat } from './message.schema';
+import { MessagesGateway } from './messages.gateway';
 
 @Controller()
 export class AppController {
-  constructor(@InjectModel(Chat.name) private chatModel: Model<Chat>) { }
+  constructor(
+    @InjectModel(Chat.name) private chatModel: Model<Chat>,
+    private readonly messagesGateway: MessagesGateway,
+  ) { }
 
   // Obtener lista de chats para un usuario específico
   @MessagePattern({ cmd: 'get_chats' })
@@ -49,6 +53,10 @@ export class AppController {
     chat.lastMessageTime = new Date();
 
     await chat.save();
+    this.messagesGateway.emitNewMessage(data.chatId, {
+      chatId: data.chatId,
+      message: chat.messages[chat.messages.length - 1],
+    });
     return { success: true, chat };
   }
 
