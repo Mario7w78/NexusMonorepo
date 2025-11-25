@@ -23,7 +23,7 @@ export const useNexusController = () => {
   // --- 2. ESTADOS DE DATOS (Desde Backend) ---
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [chats, setChats] = useState<Chat[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]); // Aún vacío por ahora
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
 
   // --- 3. FETCHING DE DATOS (Lectura) ---
@@ -39,7 +39,7 @@ export const useNexusController = () => {
   };
 
   const fetchChats = async () => {
-    if (!currentUser) return; // No fetch if not logged in
+    if (!currentUser) return;
 
     try {
       const response = await fetch(`${API_URL}/messages/${currentUser.id}`);
@@ -66,7 +66,7 @@ export const useNexusController = () => {
     loadSession();
   }, []);
 
-  // Cargar datos al iniciar el hook (cuando abre la app)
+  // Cargar datos al iniciar el hook
   useEffect(() => {
     setLoading(true);
     const promises = [fetchIdeas()];
@@ -74,13 +74,12 @@ export const useNexusController = () => {
 
     Promise.all(promises)
       .finally(() => setLoading(false));
-  }, [currentUser]); // Re-fetch when user changes
+  }, [currentUser]);
 
   // --- 4. ACCIONES (Lógica de Negocio) ---
 
   const navigateToModule = (module: ModuleId) => {
     setActiveModule(module);
-    // Limpiamos estados al cambiar de módulo para evitar errores visuales
     setSelectedIdeaId(null);
     setShowCheckout(false);
     setShowPublishForm(false);
@@ -88,7 +87,6 @@ export const useNexusController = () => {
 
   const selectIdea = (id: string | number | null) => {
     setSelectedIdeaId(id);
-    // Si deseleccionamos (id es null), también cerramos checkout por seguridad
     if (id === null) setShowCheckout(false);
   };
 
@@ -100,23 +98,20 @@ export const useNexusController = () => {
     setShowPublishForm(show);
   };
 
-  // Helper para obtener el objeto completo de la idea seleccionada
-  // Compara tanto id (mock) como _id (mongo)
   const getSelectedIdea = () => {
     return ideas.find(i => (i._id || i.id) === selectedIdeaId);
   };
 
-  // --- NUEVA FUNCIÓN: PUBLICAR IDEA (Escritura) ---
+  // --- PUBLICAR IDEA ---
   const publishIdea = async (formData: any) => {
     try {
-      setLoading(true); // Mostramos carga
+      setLoading(true);
 
       const response = await fetch(`${API_URL}/ideas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          // Datos por defecto para el MVP
           author: currentUser?.fullName || 'Juan Dev',
           authorId: currentUser?.id || 'user123',
           status: 'Nueva',
@@ -125,19 +120,21 @@ export const useNexusController = () => {
         }),
       });
 
+      // Verificar si la respuesta HTTP fue exitosa (200-299)
       if (response.ok) {
         console.log("✅ Idea publicada con éxito");
-        await fetchIdeas();        // 1. Recarga la lista desde el servidor
-        setShowPublishForm(false); // 2. Cierra el formulario
+        await fetchIdeas();
+        setShowPublishForm(false);
       } else {
-        console.error("❌ Error del servidor al publicar:", response.status);
+        const errorData = await response.json().catch(() => ({}));
+        console.error("❌ Error del servidor:", response.status, errorData);
         alert("Hubo un problema al publicar. Intenta de nuevo.");
       }
     } catch (error) {
-      console.error("❌ Error de red al publicar:", error);
+      console.error("❌ Error de red:", error);
       alert("Error de conexión. Revisa tu internet.");
     } finally {
-      setLoading(false); // Quitamos carga
+      setLoading(false);
     }
   };
 
@@ -146,7 +143,6 @@ export const useNexusController = () => {
     try {
       setLoading(true);
 
-      // Use Supabase Auth directly
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -158,7 +154,6 @@ export const useNexusController = () => {
         return { success: false, error: 'Login failed' };
       }
 
-      // Fetch user profile from backend
       const response = await fetch(`${API_URL}/users/${data.user.id}`);
       if (!response.ok) throw new Error('Failed to fetch user profile');
 
@@ -179,7 +174,6 @@ export const useNexusController = () => {
     try {
       setLoading(true);
 
-      // Use Supabase Auth directly
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -197,7 +191,6 @@ export const useNexusController = () => {
         return { success: false, error: 'Registration failed' };
       }
 
-      // Create user profile via backend
       const response = await fetch(`${API_URL}/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -323,7 +316,6 @@ export const useNexusController = () => {
       activeChatIndex,
       loading,
       currentUser,
-      // Data moved to state for easier access in UI
       ideas,
       chats,
       transactions
