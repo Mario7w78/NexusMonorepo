@@ -74,4 +74,46 @@ export class SupabaseService {
         if (error) throw error;
         return { success: true };
     }
+
+    // --- SUPABASE AUTH METHODS ---
+    async signUp(email: string, password: string, metadata: { fullName: string; specialty: string }) {
+        const { data, error } = await this.supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: metadata
+            }
+        });
+
+        if (error) throw error;
+        return data;
+    }
+
+    async signIn(email: string, password: string) {
+        const { data, error } = await this.supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) throw error;
+        return data;
+    }
+
+    async signOut() {
+        const { error } = await this.supabase.auth.signOut();
+        if (error) throw error;
+        return { success: true };
+    }
+
+    async getSession() {
+        const { data, error } = await this.supabase.auth.getSession();
+        if (error) throw error;
+        return data.session;
+    }
+
+    async getUser(accessToken: string) {
+        const { data, error } = await this.supabase.auth.getUser(accessToken);
+        if (error) throw error;
+        return data.user;
+    }
 }

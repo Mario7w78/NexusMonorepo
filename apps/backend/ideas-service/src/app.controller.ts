@@ -4,15 +4,21 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Idea } from './idea.schema';
+import { SearchService } from './search/search.service';
 
 @Controller()
 export class AppController {
-  constructor(@InjectModel(Idea.name) private ideaModel: Model<Idea>) { }
+  constructor(
+    @InjectModel(Idea.name) private ideaModel: Model<Idea>,
+    private readonly searchService: SearchService
+  ) { }
 
   @MessagePattern({ cmd: 'create_idea' })
   async create(@Payload() data: any) {
     const createdIdea = new this.ideaModel(data);
-    return createdIdea.save();
+    const savedIdea = await createdIdea.save();
+    await this.searchService.indexIdea(savedIdea);
+    return savedIdea;
   }
 
   @MessagePattern({ cmd: 'get_ideas' })
@@ -27,12 +33,11 @@ export class AppController {
 
   @MessagePattern({ cmd: 'search_ideas' })
   async search(@Payload() filters: any) {
-    const query: any = { isDraft: false };
-
-    // Text search
     if (filters.keyword) {
-      query.$text = { $search: filters.keyword };
+      return this.searchService.search(filters.keyword);
     }
+
+    const query: any = { isDraft: false };
 
     // Category filter
     if (filters.category) {
@@ -71,8 +76,6 @@ export class AppController {
       sort.createdAt = -1;
     } else if (filters.sortBy === 'popularity') {
       sort.collaborators = -1;
-    } else if (filters.keyword) {
-      sort.score = { $meta: 'textScore' };
     }
 
     return this.ideaModel.find(query).sort(sort).exec();
@@ -80,11 +83,16 @@ export class AppController {
 
   @MessagePattern({ cmd: 'update_idea' })
   async update(@Payload() data: { id: string; updates: any }) {
-    return this.ideaModel.findByIdAndUpdate(data.id, data.updates, { new: true }).exec();
+    const updatedIdea = await this.ideaModel.findByIdAndUpdate(data.id, data.updates, { new: true }).exec();
+    if (updatedIdea) {
+      await this.searchService.indexIdea(updatedIdea);
+    }
+    return updatedIdea;
   }
 
   @MessagePattern({ cmd: 'delete_idea' })
   async delete(@Payload() id: string) {
+    await this.searchService.delete(id);
     return this.ideaModel.findByIdAndDelete(id).exec();
   }
 

@@ -6,10 +6,13 @@ const microservices_1 = require("@nestjs/microservices");
 const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.createMicroservice(app_module_1.AppModule, {
-        transport: microservices_1.Transport.TCP,
+        transport: microservices_1.Transport.RMQ,
         options: {
-            host: 'localhost',
-            port: 3004,
+            urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672'],
+            queue: 'payments_queue',
+            queueOptions: {
+                durable: false
+            },
         },
     });
     await app.listen();

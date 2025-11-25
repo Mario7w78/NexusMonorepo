@@ -11,7 +11,7 @@ import { AppService } from './app.service';
         name: 'USERS_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'],
+          urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672'],
           queue: 'users_queue',
           queueOptions: { durable: false },
         },
@@ -20,7 +20,7 @@ import { AppService } from './app.service';
         name: 'IDEAS_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'],
+          urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672'],
           queue: 'ideas_queue',
           queueOptions: { durable: false },
         },
@@ -29,7 +29,7 @@ import { AppService } from './app.service';
         name: 'MESSAGES_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'],
+          urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672'],
           queue: 'messages_queue',
           queueOptions: { durable: false },
         },
@@ -38,7 +38,7 @@ import { AppService } from './app.service';
         name: 'PAYMENTS_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'],
+          urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672'],
           queue: 'payments_queue',
           queueOptions: { durable: false },
         },

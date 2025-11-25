@@ -49,31 +49,28 @@ export class AppController {
   async registerUser(@Payload() data: { fullName: string; email: string; password: string; specialty: string }) {
     console.log('📝 Register user request received:', { email: data.email, fullName: data.fullName });
     try {
-      // Check if user exists
-      console.log('🔍 Checking if user exists...');
-      const { data: existing, error: checkError } = await this.supabaseService.getClient()
-        .from('user')
-        .select('*')
-        .eq('email', data.email)
-        .maybeSingle();
+      // 1. Create auth user via Supabase Auth
+      console.log('🔐 Creating auth user...');
+      const authResult = await this.supabaseService.signUp(
+        data.email,
+        data.password,
+        { fullName: data.fullName, specialty: data.specialty }
+      );
 
-      if (checkError) {
-        console.error('❌ Error checking user:', checkError);
-        return { success: false, message: `Database error: ${checkError.message}` };
+      if (!authResult.user) {
+        console.error('❌ Auth user creation failed');
+        return { success: false, message: 'Failed to create auth user' };
       }
 
-      if (existing) {
-        console.log('⚠️ User already exists');
-        return { success: false, message: 'Email already registered' };
-      }
+      console.log('✅ Auth user created:', authResult.user.id);
 
-      // Create user
-      console.log('✨ Creating new user...');
-      const newUser = await this.supabaseService.createUser({
+      // 2. Create user profile in database
+      console.log('✨ Creating user profile...');
+      const userProfile = await this.supabaseService.createUser({
+        id: authResult.user.id, // Use auth user ID
         fullName: data.fullName,
         email: data.email,
         specialty: data.specialty,
-        passwordHash: data.password,
         avatar: data.fullName.split(' ').map(n => n[0]).join('').toUpperCase(),
         projectsCreated: 0,
         projectsCollaborated: 0,
@@ -81,8 +78,12 @@ export class AppController {
         totalEarnings: 0
       });
 
-      console.log('✅ User created successfully:', newUser.id);
-      return { success: true, user: newUser };
+      console.log('✅ User profile created successfully');
+      return {
+        success: true,
+        user: userProfile,
+        session: authResult.session
+      };
     } catch (error) {
       console.error('❌ Register error:', error);
       return { success: false, message: error.message };
@@ -93,33 +94,34 @@ export class AppController {
   async loginUser(@Payload() data: { email: string; password: string }) {
     console.log('🔐 Login request received:', { email: data.email });
     try {
-      const { data: user, error: loginError } = await this.supabaseService.getClient()
-        .from('user')
-        .select('*')
-        .eq('email', data.email)
-        .maybeSingle();
+      // 1. Authenticate with Supabase Auth
+      console.log('🔐 Authenticating with Supabase Auth...');
+      const authResult = await this.supabaseService.signIn(data.email, data.password);
 
-      if (loginError) {
-        console.error('❌ Error finding user:', loginError);
-        return { success: false, message: `Database error: ${loginError.message}` };
+      if (!authResult.user) {
+        console.log('⚠️ Authentication failed');
+        return { success: false, message: 'Invalid credentials' };
       }
 
-      if (!user) {
-        console.log('⚠️ User not found');
-        return { success: false, message: 'User not found' };
-      }
+      console.log('✅ Auth successful, fetching user profile...');
 
-      // Mock password check (NOT production ready)
-      if (user.passwordHash !== data.password) {
-        console.log('⚠️ Invalid password');
-        return { success: false, message: 'Invalid password' };
+      // 2. Fetch user profile from database
+      const userProfile = await this.supabaseService.findUserById(authResult.user.id);
+
+      if (!userProfile) {
+        console.log('⚠️ User profile not found');
+        return { success: false, message: 'User profile not found' };
       }
 
       console.log('✅ Login successful');
-      return { success: true, user };
+      return {
+        success: true,
+        user: userProfile,
+        session: authResult.session
+      };
     } catch (error) {
       console.error('❌ Login error:', error);
-      return { success: false, message: error.message };
+      return { success: false, message: error.message || 'Invalid credentials' };
     }
   }
 }
