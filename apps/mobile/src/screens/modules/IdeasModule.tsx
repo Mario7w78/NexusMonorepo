@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Card, Badge, Button, Input, Separator, Avatar, COLORS } from '../../components/NativeComponents';
-import { ArrowLeft, Clock, Users, DollarSign } from 'lucide-react-native';
+import { ArrowLeft, Clock, Users, DollarSign, Paperclip, X } from 'lucide-react-native';
+import * as DocumentPicker from 'expo-document-picker';
 
 interface IdeasModuleProps {
   ideas: any[];
@@ -18,9 +19,47 @@ export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
     budget: '',
     deliveryTime: ''
   });
+  const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
 
   const handleChange = (key: string, value: string) => {
     setForm({ ...form, [key]: value });
+  };
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+        multiple: true
+      });
+
+      if (!result.canceled && result.assets) {
+        setSelectedFiles([...selectedFiles, ...result.assets]);
+      }
+    } catch (err) {
+      console.log('Error picking document:', err);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    const newFiles = [...selectedFiles];
+    newFiles.splice(index, 1);
+    setSelectedFiles(newFiles);
+  };
+
+  const handlePublish = () => {
+    actions.publishIdea({
+      ...form,
+      files: selectedFiles.map(f => ({
+        name: f.name,
+        type: f.mimeType,
+        size: f.size,
+        uri: f.uri
+      }))
+    });
+    // Reset form
+    setForm({ title: '', category: '', description: '', budget: '', deliveryTime: '' });
+    setSelectedFiles([]);
   };
 
   // --- 1. ESTADO DE CARGA ---
@@ -83,10 +122,27 @@ export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
               />
             </View>
           </View>
+
+          <Text style={styles.label}>Archivos Adjuntos</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+            {selectedFiles.map((file, index) => (
+              <View key={index} style={styles.fileBadge}>
+                <Text style={styles.fileText} numberOfLines={1}>{file.name}</Text>
+                <TouchableOpacity onPress={() => removeFile(index)}>
+                  <X size={14} color={COLORS.textMuted} />
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.addFileButton} onPress={handlePickDocument}>
+              <Paperclip size={16} color={COLORS.primary} />
+              <Text style={{ color: COLORS.primary, fontSize: 12, marginLeft: 4 }}>Adjuntar</Text>
+            </TouchableOpacity>
+          </View>
+
           <Button 
             title="Publicar Proyecto" 
             variant="success" 
-            onPress={() => actions.publishIdea(form)} 
+            onPress={handlePublish} 
           />
         </Card>
       </ScrollView>
@@ -165,6 +221,21 @@ export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
              {idea.skills?.map((s: string, index: number) => <Badge key={index} text={s} variant="secondary" />)}
           </View>
+
+          {/* Mostrar archivos adjuntos si existen */}
+          {idea.files && idea.files.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={[styles.label, { marginBottom: 8 }]}>Archivos Adjuntos</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {idea.files.map((file: any, index: number) => (
+                  <View key={index} style={styles.fileBadge}>
+                    <Paperclip size={12} color={COLORS.textMuted} style={{ marginRight: 4 }} />
+                    <Text style={styles.fileText} numberOfLines={1}>{file.name}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </Card>
 
         <Card>
@@ -224,6 +295,9 @@ export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
               <View style={{ flexDirection: 'row', marginTop: 12, alignItems: 'center' }}>
                  <Avatar initials={idea.avatar || 'U'} size={24} />
                  <Text style={[styles.textMuted, { marginLeft: 8, fontSize: 12 }]}>{idea.author}</Text>
+                 {idea.files && idea.files.length > 0 && (
+                   <Paperclip size={14} color={COLORS.textMuted} style={{ marginLeft: 'auto' }} />
+                 )}
               </View>
             </Card>
           );
@@ -243,4 +317,8 @@ const styles = StyleSheet.create({
   bodyText: { color: COLORS.text, fontSize: 14, lineHeight: 22, marginTop: 4 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 4 },
   bigPrice: { fontSize: 20, fontWeight: 'bold', color: COLORS.text },
+  label: { fontSize: 14, fontWeight: '500', marginBottom: 6, color: COLORS.text },
+  fileBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: COLORS.border },
+  fileText: { fontSize: 12, color: COLORS.text, marginRight: 6, maxWidth: 100 },
+  addFileButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: COLORS.primary, borderStyle: 'dashed' }
 });

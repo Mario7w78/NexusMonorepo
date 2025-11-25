@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModuleId, Idea, Chat, Transaction, User } from '../types/nexus';
+import { supabase } from '../config/supabase';
 
 // Detecta automáticamente la plataforma
 const API_URL = Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
@@ -144,25 +145,31 @@ export const useNexusController = () => {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+
+      // Use Supabase Auth directly
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      if (!response.ok) throw new Error('Credenciales inválidas');
+      if (error) throw error;
 
-      const data = await response.json();
-      if (data.success) {
-        setCurrentUser(data.user);
-        await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
-        return { success: true };
-      } else {
-        return { success: false, error: data.message || 'Error de login' };
+      if (!data.user) {
+        return { success: false, error: 'Login failed' };
       }
-    } catch (error) {
+
+      // Fetch user profile from backend
+      const response = await fetch(`${API_URL}/users/${data.user.id}`);
+      if (!response.ok) throw new Error('Failed to fetch user profile');
+
+      const userProfile = await response.json();
+      setCurrentUser(userProfile);
+      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userProfile));
+
+      return { success: true };
+    } catch (error: any) {
       console.error("Login Error:", error);
-      return { success: false, error: 'Email o contraseña incorrectos' };
+      return { success: false, error: error.message || 'Email o contraseña incorrectos' };
     } finally {
       setLoading(false);
     }
@@ -171,25 +178,52 @@ export const useNexusController = () => {
   const register = async (fullName: string, email: string, password: string, specialty: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, email, password, specialty }),
+
+      // Use Supabase Auth directly
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            fullName,
+            specialty
+          }
+        }
       });
 
-      if (!response.ok) throw new Error('Error al registrar');
+      if (error) throw error;
 
-      const data = await response.json();
-      if (data.success) {
-        setCurrentUser(data.user);
-        await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data.user));
-        return { success: true };
-      } else {
-        return { success: false, error: data.message || 'Error al registrar' };
+      if (!data.user) {
+        return { success: false, error: 'Registration failed' };
       }
-    } catch (error) {
+
+      // Create user profile via backend
+      const response = await fetch(`${API_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: data.user.id,
+          fullName,
+          email,
+          specialty,
+          avatar: fullName.split(' ').map(n => n[0]).join('').toUpperCase(),
+          projectsCreated: 0,
+          projectsCollaborated: 0,
+          rating: 0,
+          totalEarnings: 0
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create user profile');
+
+      const userProfile = await response.json();
+      setCurrentUser(userProfile);
+      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userProfile));
+
+      return { success: true };
+    } catch (error: any) {
       console.error("Register Error:", error);
-      return { success: false, error: 'No se pudo crear la cuenta' };
+      return { success: false, error: error.message || 'No se pudo crear la cuenta' };
     } finally {
       setLoading(false);
     }
@@ -197,6 +231,7 @@ export const useNexusController = () => {
 
   const logout = async () => {
     try {
+      await supabase.auth.signOut();
       await AsyncStorage.removeItem(USER_STORAGE_KEY);
       setCurrentUser(null);
       setActiveModule('dashboard');

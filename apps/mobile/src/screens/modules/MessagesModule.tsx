@@ -22,6 +22,7 @@ export const MessagesModule = ({ chats, user, actions }: MessagesModuleProps) =>
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [loadingUsers, setLoadingUsers] = useState(false);
 
   // Cargar usuarios al abrir el modal
@@ -33,11 +34,16 @@ export const MessagesModule = ({ chats, user, actions }: MessagesModuleProps) =>
 
   const loadUsers = async () => {
     setLoadingUsers(true);
-    const users = await actions.fetchAllUsers();
-    // Filtrar al usuario actual para no chatear consigo mismo
-    const otherUsers = users.filter((u: any) => u.id !== user.id);
-    setAllUsers(otherUsers);
-    setLoadingUsers(false);
+    try {
+      const users = await actions.fetchAllUsers();
+      // Filtrar al usuario actual para no chatear consigo mismo
+      const otherUsers = users.filter((u: any) => u.id !== user.id);
+      setAllUsers(otherUsers);
+    } catch (error) {
+      console.error("Error loading users", error);
+    } finally {
+      setLoadingUsers(false);
+    }
   };
 
   const handleCreateChat = async (selectedUser: any) => {
@@ -164,16 +170,37 @@ export const MessagesModule = ({ chats, user, actions }: MessagesModuleProps) =>
             <Plus size={24} color="#fff" />
           </TouchableOpacity>
         </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#f1f5f9', borderRadius: 12, marginBottom: 16 }}>
+           <Search size={20} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+           <Input 
+             placeholder="Buscar en mis chats..." 
+             value={chatSearchQuery}
+             onChangeText={setChatSearchQuery}
+             style={{ flex: 1, borderWidth: 0, marginBottom: 0, height: 24, padding: 0 }}
+           />
+           {chatSearchQuery.length > 0 && (
+             <TouchableOpacity onPress={() => setChatSearchQuery('')}>
+               <X size={16} color={COLORS.textMuted} />
+             </TouchableOpacity>
+           )}
+        </View>
         
-        {chats.length === 0 ? (
+        {chats.filter(c => {
+            const name = c.participantName || c.name || 'Usuario';
+            return name.toLowerCase().includes(chatSearchQuery.toLowerCase());
+        }).length === 0 ? (
           <View style={{ alignItems: 'center', marginTop: 40 }}>
             <Text style={{ textAlign: 'center', color: COLORS.textMuted, marginBottom: 20 }}>
-              No tienes mensajes aún.
+              {chatSearchQuery ? 'No se encontraron chats' : 'No tienes mensajes aún.'}
             </Text>
-            <Button title="Iniciar nuevo chat" onPress={() => setShowNewChatModal(true)} />
+            {!chatSearchQuery && <Button title="Iniciar nuevo chat" onPress={() => setShowNewChatModal(true)} />}
           </View>
         ) : (
-          chats.map((chat) => {
+          chats.filter(c => {
+            const name = c.participantName || c.name || 'Usuario';
+            return name.toLowerCase().includes(chatSearchQuery.toLowerCase());
+          }).map((chat) => {
             // Normalización de datos para la tarjeta
             const uniqueId = chat._id || chat.id || 'temp-id';
             const displayName = chat.participantName || chat.name || 'Usuario';

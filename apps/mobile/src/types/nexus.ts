@@ -30,6 +30,7 @@ export interface Idea {
   portfolio?: string[];
   visibility?: 'public' | 'private' | 'shared';
   isDraft?: boolean;
+  files?: { name: string; type: string; size: number; uri?: string }[];
 }
 
 export interface Chat {

@@ -58,7 +58,7 @@ export const NexusDashboardScreen = ({ state, actions }: DashboardProps) => {
     switch (state.activeModule) {
       case 'dashboard': return <DashboardHome actions={actions} ideas={state.ideas} />;
       case 'ideas': return <IdeasModule ideas={state.ideas} actions={actions} state={state} />;
-      case 'messages': return <MessagesModule chats={state.chats} user={state.currentUser} />;
+      case 'messages': return <MessagesModule chats={state.chats} user={state.currentUser} actions={actions} />;
       case 'payments': return <PaymentsModule transactions={state.transactions} />;
       case 'users': return <ProfileModule user={state.currentUser} onLogout={actions.logout} />;
       default: return <DashboardHome actions={actions} ideas={state.ideas} />;
