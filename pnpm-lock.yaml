@@ -142,6 +142,9 @@ importers:
       amqplib:
         specifier: ^0.10.9
         version: 0.10.9
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.4.7
       mongoose:
         specifier: ^8.20.1
         version: 8.20.1
