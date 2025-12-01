@@ -26,6 +26,11 @@ export const useNexusController = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // --- SEARCH STATES ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Idea[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   // --- 3. FETCHING DE DATOS (Lectura) ---
   const fetchIdeas = async () => {
     try {
@@ -36,6 +41,33 @@ export const useNexusController = () => {
     } catch (error) {
       console.log("Modo Offline o Error API Ideas:", error);
     }
+  };
+
+  const searchIdeas = async (keyword: string) => {
+    if (!keyword || keyword.trim() === '') {
+      setSearchResults([]);
+      setSearchQuery('');
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      setSearchQuery(keyword);
+      const response = await fetch(`${API_URL}/ideas/search?keyword=${encodeURIComponent(keyword)}`);
+      if (!response.ok) throw new Error('Error en búsqueda');
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error) {
+      console.log("Error en búsqueda:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
   };
 
   const fetchChats = async () => {
@@ -318,7 +350,10 @@ export const useNexusController = () => {
       currentUser,
       ideas,
       chats,
-      transactions
+      transactions,
+      searchQuery,
+      searchResults,
+      isSearching
     },
     actions: {
       navigateToModule,
@@ -334,7 +369,9 @@ export const useNexusController = () => {
       createChat,
       sendMessage,
       markChatAsRead,
-      fetchAllUsers
+      fetchAllUsers,
+      searchIdeas,
+      clearSearch
     }
   };
 };

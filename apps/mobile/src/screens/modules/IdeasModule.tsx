@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Card, Badge, Button, Input, Separator, Avatar, COLORS } from '../../components/NativeComponents';
 import { ArrowLeft, Clock, Users, DollarSign, Paperclip, X } from 'lucide-react-native';
@@ -20,6 +20,20 @@ export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
     deliveryTime: ''
   });
   const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
+
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearchQuery.trim()) {
+        actions.searchIdeas(localSearchQuery);
+      } else {
+        actions.clearSearch();
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [localSearchQuery]);
 
   const handleChange = (key: string, value: string) => {
     setForm({ ...form, [key]: value });
@@ -271,14 +285,37 @@ export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
         <Button title="Publicar" size="sm" onPress={() => actions.togglePublishForm(true)} />
       </View>
 
-      <Input placeholder="Buscar por tecnología, categoría..." />
+      <Input 
+        placeholder="Buscar por tecnología, categoría..." 
+        value={localSearchQuery}
+        onChangeText={setLocalSearchQuery}
+      />
 
-      {ideas.length === 0 ? (
+      {state.isSearching && (
+        <View style={{ alignItems: 'center', marginTop: 20 }}>
+          <ActivityIndicator size="small" color={COLORS.primary} />
+          <Text style={{ color: COLORS.textMuted, marginTop: 8 }}>Buscando...</Text>
+        </View>
+      )}
+
+      {localSearchQuery && !state.isSearching && state.searchResults.length === 0 && (
         <Text style={{ textAlign: 'center', marginTop: 40, color: COLORS.textMuted }}>
-          No hay ideas disponibles. ¡Sé el primero en publicar!
+          No se encontraron resultados para "{localSearchQuery}"
         </Text>
-      ) : (
-        ideas.map((idea) => {
+      )}
+
+      {(() => {
+        const displayIdeas = localSearchQuery ? state.searchResults : ideas;
+        
+        if (!state.isSearching && displayIdeas.length === 0 && !localSearchQuery) {
+          return (
+            <Text style={{ textAlign: 'center', marginTop: 40, color: COLORS.textMuted }}>
+              No hay ideas disponibles. ¡Sé el primero en publicar!
+            </Text>
+          );
+        }
+
+        return displayIdeas.map((idea: any) => {
           // Compatibilidad: Usamos _id (Mongo) o id (Mock)
           const uniqueId = idea._id || idea.id;
           
@@ -301,8 +338,8 @@ export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
               </View>
             </Card>
           );
-        })
-      )}
+        });
+      })()}
     </ScrollView>
   );
 };

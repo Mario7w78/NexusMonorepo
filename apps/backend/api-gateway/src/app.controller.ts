@@ -1,5 +1,5 @@
 // apps/backend/api-gateway/src/app.controller.ts
-import { Controller, Get, Post, Body, Param, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Inject, Query } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 
 @Controller()
@@ -56,6 +56,15 @@ export class AppController {
       collaborators: data.collaborators || 0,
     };
     return this.ideasClient.send({ cmd: 'create_idea' }, ideaData);
+  }
+
+  @Get('ideas/search')
+  searchIdeas(@Query('keyword') keyword: string) {
+    console.log('🔍 Searching ideas with keyword:', keyword);
+    if (!keyword || keyword.trim() === '') {
+      return this.ideasClient.send({ cmd: 'get_ideas' }, {});
+    }
+    return this.ideasClient.send({ cmd: 'search_ideas' }, { keyword });
   }
 
   // --- MENSAJES ---
