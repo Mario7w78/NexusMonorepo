@@ -4,6 +4,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  console.log('🚀 API Gateway starting...');
+
   app.enableCors();
 
   // Escuchar en 0.0.0.0 para aceptar conexiones desde cualquier interfaz
