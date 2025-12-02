@@ -13,6 +13,7 @@
   "dependencies": {
     "@nestjs/microservices": "^11.1.9",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-community/netinfo": "11.4.1",
     "@supabase/supabase-js": "^2.84.0",
     "expo": "~54.0.25",
     "expo-document-picker": "~14.0.7",
