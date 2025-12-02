@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { processIdeaFiles } from '../../utils/idea-helpers';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Card, Badge, Button, Input, Separator, Avatar, COLORS } from '../../components/NativeComponents';
 import { ArrowLeft, Clock, Users, DollarSign, Paperclip, X } from 'lucide-react-native';
@@ -61,20 +62,32 @@ export const IdeasModule = ({ ideas, actions, state }: IdeasModuleProps) => {
     setSelectedFiles(newFiles);
   };
 
-  const handlePublish = () => {
-    actions.publishIdea({
-      ...form,
-      files: selectedFiles.map(f => ({
-        name: f.name,
-        type: f.mimeType,
-        size: f.size,
-        uri: f.uri
-      }))
-    });
+const handlePublish = async () => {
+  try {
+    // Process files before publishing
+    const processedData = await processIdeaFiles(
+      {
+        ...form,
+        files: selectedFiles.map(f => ({
+          name: f.name,
+          type: f.mimeType,
+          size: f.size,
+          uri: f.uri
+        }))
+      },
+      state.currentUser?.id || 'user123'
+    );
+    // Publish with uploaded file URLs
+    actions.publishIdea(processedData);
+    
     // Reset form
     setForm({ title: '', category: '', description: '', budget: '', deliveryTime: '' });
     setSelectedFiles([]);
-  };
+  } catch (error) {
+    console.error('Error publishing idea:', error);
+    alert('Error al publicar la idea');
+  }
+};
 
   // --- 1. ESTADO DE CARGA ---
   if (state.loading && !state.showPublishForm && !state.showCheckout && !state.selectedIdea) {
